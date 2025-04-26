@@ -8,7 +8,7 @@ NC := \033[0m # No Color
 app:
 	@printf "${GREEN}[+] INFO Starting application containers in detached mode...${NC}"
 	@docker-compose up --build -d || (echo "Failed to start containers"; exit 1)
-	@printf "${GREEN}[+] INFO Containers started successfully"
+	@printf "${GREEN}[+] INFO Containers started successfully${NC}"
 	@docker-compose ps
 
 
@@ -23,10 +23,10 @@ stop:
 empty_base:
 	@printf "${GREEN}[+] INFO Starting empty PostgreSQL container...${NC}"
 	@docker run --name empty_postgres \
-		-e POSTGRES_USER=empty \
-		-e POSTGRES_PASSWORD=empty \
-		-e POSTGRES_DB=empty \
-		-p 5433:5432 \
+		-e POSTGRES_USER=readydog \
+		-e POSTGRES_PASSWORD=JWaPsJdez19fLJkyPiHi9W \
+		-e POSTGRES_DB=readydog \
+		-p 5432:5432 \
 		-d postgres:13-alpine
 	@printf "${GREEN}[+] INFO PostgreSQL container started on port 5433 ${NC}"
 	@printf "${GREEN}[+] INFO Connection string: postgresql://empty:empty@localhost:5433/empty ${NC}"
