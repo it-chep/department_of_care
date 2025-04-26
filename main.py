@@ -39,6 +39,14 @@ async def handle_getcource_notification(client, message: Message):
         )
 
 
+@telegram_client.client.on_message(filters.regex("test"))
+async def handle_getcource_notification(client, message: Message):
+    await telegram_client.client.send_message(
+        chat_id=message.chat.id,
+        text="привет от бота"
+    )
+
+
 # -1001507744756 - чат вакансий
 # -1001711390197 - чат рекламы
 @telegram_client.client.on_message(
@@ -104,6 +112,11 @@ async def root():
 
 
 if __name__ == "__main__":
-    import uvicorn
-
-    uvicorn.run(app, host="0.0.0.0", port=8000, log_level="info")
+    loop = asyncio.get_event_loop()
+    try:
+        loop.run_until_complete(run_pyrogram_handlers())
+    except KeyboardInterrupt:
+        print("Остановка бота...")
+        loop.run_until_complete(telegram_client.client.stop())
+    finally:
+        loop.close()
