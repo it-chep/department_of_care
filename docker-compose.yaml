@@ -1,0 +1,39 @@
+services:
+  postgres:
+    image: postgres:13-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER:
+      POSTGRES_PASSWORD:
+      POSTGRES_DB:
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -U ...." ]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  redis:
+    image: redis
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+    expose:
+      - 6379
+
+  application:
+    build: .
+    restart: unless-stopped
+    depends_on:
+      - postgres
+      - redis
+    volumes:
+      - .:/app
+    ports:
+      - "8000:8000"
+
+volumes:
+  postgres_data:
