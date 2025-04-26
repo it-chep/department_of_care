@@ -14,9 +14,9 @@ app:
 
 .PHONY: stop
 stop:
-	@printf "${GREEN} [+] INFO Stopping containers...${NC}"
+	@printf "${GREEN}[+] INFO Stopping containers...${NC}"
 	@docker-compose stop
-	@printf "${GREEN} [+] INFO Containers stopped successfully${NC}"
+	@printf "${GREEN}[+] INFO Containers stopped successfully${NC}"
 	@docker-compose ps
 
 .PHONY: empty_base

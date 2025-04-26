@@ -66,7 +66,7 @@ async def handle_new_chat_member(client, message: Message):
 
         repo.create_new_welcome(UserToWelcome(
             tg_id=member.id,
-            username=member.username,
+            username=member.username or "",
             first_name=member.first_name
         ))
 
