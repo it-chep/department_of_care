@@ -1,6 +1,6 @@
 import asyncio
 from contextlib import asynccontextmanager
-from pyrogram import filters
+from pyrogram import filters, enums
 from pyrogram.types import Message
 from app.init import telegram_client
 from fastapi import FastAPI
@@ -39,8 +39,9 @@ async def handle_getcource_notification(client, message: Message):
         )
 
 
-@telegram_client.client.on_message(filters.regex("test"))
+@telegram_client.client.on_message(filters.regex("test_necheporuk"))
 async def handle_getcource_notification(client, message: Message):
+    print(f"{message.from_user.id}, {message.from_user.first_name} дернулась ручка тестов")
     await telegram_client.client.send_message(
         chat_id=message.chat.id,
         text="привет от бота"
@@ -50,7 +51,7 @@ async def handle_getcource_notification(client, message: Message):
 # -1001507744756 - чат вакансий
 # -1001711390197 - чат рекламы
 @telegram_client.client.on_message(
-    filters.chat([-1001507744756, -1001711390197]) & filters.regex(r'has been kicked from the chat')
+    filters.chat([-1001507744756, -1001711390197]) & filters.regex(r'has been kicked from the chat because this user is in spam list')
 )
 async def handle_delete_notification(client, message: Message):
     await message.delete()
@@ -70,15 +71,19 @@ async def handle_new_chat_member(client, message: Message):
             first_name=member.first_name
         ))
 
-        await message.reply(
-            f"{member.first_name} ПРИДЭП, юный медблогерец, добро пожаловать на тусовку 😎\n\n"
-            f"Внимательно прочитай все закрепы и напиши в этот чат #знакомство по примеру https://t.me/c/1600505428/70\n\n"
-            f"А затем начинай:\n"
-            f"- изучать базу знаний из 150+ лекций на геткурсе\n"
-            f"- участвовать в наших челленджах\n"
-            f"- общаться с резидентами в этом чате 🩵"
-        )
+        name = f'<a href="tg://user?id={message.from_user.id}">{message.from_user.first_name}</a>'
+        if message.from_user.username:
+            name = f"@{message.from_user.username}"
 
+        await message.reply(
+            text=f"{name} ПРИДЭП, юный медблогерец, добро пожаловать на тусовку 😎\n\n"
+                 f"Внимательно прочитай все закрепы и напиши в этот чат #знакомство по примеру https://t.me/c/1600505428/70\n\n"
+                 f"А затем начинай:\n"
+                 f"- изучать базу знаний из 150+ лекций на геткурсе\n"
+                 f"- участвовать в наших челленджах\n"
+                 f"- общаться с резидентами в этом чате 🩵",
+            parse_mode=enums.ParseMode.HTML,
+        )
 
 @telegram_client.client.on_message(
     filters.text & filters.chat([-1001600505428]) & filters.regex(r'migrate_users_to_prod'))
