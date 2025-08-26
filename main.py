@@ -140,13 +140,11 @@ async def root():
 
 
 if __name__ == "__main__":
-    loop = asyncio.new_event_loop()
-    asyncio.set_event_loop(loop)
+    loop = asyncio.get_event_loop()
     try:
         loop.run_until_complete(run_pyrogram_handlers())
     except KeyboardInterrupt:
-        print("🛑 Получен сигнал прерывания")
+        print("Остановка бота...")
+        loop.run_until_complete(telegram_client.client.stop())
     finally:
-        if loop.is_running():
-            loop.close()
-        print("👋 Бот завершил работу")
+        loop.close()
