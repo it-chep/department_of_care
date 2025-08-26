@@ -1,6 +1,8 @@
 import asyncio
+import signal
 from contextlib import asynccontextmanager
 from pyrogram import filters, enums
+from pyrogram.errors import ChannelPrivate, RPCError
 from pyrogram.types import Message
 from app.init import telegram_client
 from fastapi import FastAPI
@@ -12,8 +14,18 @@ from app.repository.new_medblogers_chat_user import Repository
 repo = Repository()
 
 
+async def graceful_shutdown():
+    print("🛑 Остановка бота...")
+    await telegram_client.client.stop()
+
+
 @asynccontextmanager
 async def lifespan(app: FastAPI):
+    # Обработка сигналов для graceful shutdown
+    loop = asyncio.get_running_loop()
+    for sig in (signal.SIGINT, signal.SIGTERM):
+        loop.add_signal_handler(sig, lambda: asyncio.create_task(graceful_shutdown()))
+
     pyrogram_task = asyncio.create_task(run_pyrogram_handlers())
     yield
     pyrogram_task.cancel()
@@ -21,6 +33,7 @@ async def lifespan(app: FastAPI):
         await pyrogram_task
     except asyncio.CancelledError:
         pass
+    await graceful_shutdown()
 
 
 app = FastAPI(
@@ -31,12 +44,17 @@ app = FastAPI(
 
 @telegram_client.client.on_message(filters.user([7816396290]))
 async def handle_getcource_notification(client, message: Message):
-    if message.text and "Вам пишет" in message.text:
-        await telegram_client.client.send_message(
-            chat_id=-1001633906217,
-            text="@nutrio_agent @readydoc \n\nНа почту пришло новое уведомление. Прошу проверить ГК\n\nP.S. Сообщение "
-                 "отправлено автоматически"
-        )
+    try:
+        if message.text and "Вам пишет" in message.text:
+            await telegram_client.client.send_message(
+                chat_id=-1001633906217,
+                text="@nutrio_agent @readydoc \n\nНа почту пришло новое уведомление. Прошу проверить ГК\n\nP.S. Сообщение "
+                     "отправлено автоматически"
+            )
+    except ChannelPrivate:
+        print("❌ Нет доступа к чату -1001633906217")
+    except RPCError as e:
+        print(f"⚠️ Ошибка Telegram: {e}")
 
 
 @telegram_client.client.on_message(filters.regex("test_necheporuk"))
@@ -105,10 +123,15 @@ async def handle_migrate_members(client, message: Message):
 
 async def run_pyrogram_handlers():
     """Запускает обработчики Pyrogram в фоновом режиме"""
-    print(f"Стартую телеграм юзер бота")
+    print("🚀 Стартую телеграм юзер бота")
+    try:
+        await telegram_client.start()
+        await idle()
+    except Exception as e:
+        print(f"🔥 Критическая ошибка: {e}")
+    finally:
+        await graceful_shutdown()
 
-    await telegram_client.start()
-    await idle()
 
 
 @app.get("/")
@@ -117,11 +140,13 @@ async def root():
 
 
 if __name__ == "__main__":
-    loop = asyncio.get_event_loop()
+    loop = asyncio.new_event_loop()
+    asyncio.set_event_loop(loop)
     try:
         loop.run_until_complete(run_pyrogram_handlers())
     except KeyboardInterrupt:
-        print("Остановка бота...")
-        loop.run_until_complete(telegram_client.client.stop())
+        print("🛑 Получен сигнал прерывания")
     finally:
-        loop.close()
+        if loop.is_running():
+            loop.close()
+        print("👋 Бот завершил работу")
